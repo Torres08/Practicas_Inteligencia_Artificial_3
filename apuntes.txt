@@ -1,0 +1,10 @@
+---------------------------------------------------------------------------------------------------------
+
+Torres Ramos, JUan Luis
+Practica Parchis MinMax, podaAlfaBeta
+
+---------------------------------------------------------------------------------------------------------
+
+* Instalar primero libreria libsfml-dev
+* make
+* para ejecutar desde la carpeta de la Practica ./bin/Parchis
