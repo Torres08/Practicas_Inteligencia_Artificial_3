@@ -53,6 +53,26 @@ class AIPlayer: public Player{
          */
         virtual void think(color & c_piece,  int & id_piece, int & dice) const;
 
+        /*
+            TUTORIAL
+        */
+
+       /**
+        * @brief El codigo actual que realiza el movimiento aleatorio que hay mismo dentro del think
+        * 
+        * @param c_piece 
+        * @param id_piece 
+        * @param dice 
+        */
+
+       void thinkAleatorio (color & c_piece,  int & id_piece, int & dice) const;
+
+       void thinkAleatorioMasInteligente(color & c_piece,  int & id_piece, int & dice)const ;
+
+       void thinkFichaMasAdelantada(color & c_piece,  int & id_piece, int & dice) const;
+
+       void thinkMejorOpcion(color & c_piece,  int & id_piece, int & dice) const;
+
         /**
          * @brief Método que determina si el player es inteligente (decide el mejor movimiento)
          * o no. True para AIPlayer.
