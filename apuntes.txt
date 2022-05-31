@@ -15,7 +15,7 @@ heuristica: conjunto de técnicas o métodos para resolver un problema
 
 DATOS
 
-- El orden de juego es Amarillo → Azul → Rojo → Verde
+- El orden de juego es Amarillo → Azul → Rojo → Verde ||  Amarillo + ROjo vs Azul y verde
 - DADO no es aleatorio, vas eligiendo un dado de valor1-6 lo descartas, cuando hayas usado todos se repone
 - Si se saca un 6 se vuelve a tirar con el mismo color
 - Cuando se saca un 6 y las 4 fichas de ese color están fuera de la casa, se avanza 7 casillas en
