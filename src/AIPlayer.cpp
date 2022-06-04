@@ -46,7 +46,8 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
     // El siguiente código se proporciona como sugerencia para iniciar la implementación del agente.
 
     double valor; // Almacena el valor con el que se etiqueta el estado tras el proceso de busqueda.
-    //double alpha = menosinf, beta = masinf; // Cotas iniciales de la poda AlfaBeta
+    double alpha = menosinf, beta = masinf; // Cotas iniciales de la poda AlfaBeta
+
     // Llamada a la función para la poda (los parámetros son solo una sugerencia, se pueden modificar).
     //valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
     //cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
@@ -58,10 +59,14 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
     switch(id){
         case 0:
             valor = MinMax(*actual, jugador, 0 ,PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, ValoracionTest );
+            //thinkAleatorio(c_piece,id_piece,dice);
             //valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+            //thinkMejorOpcion(c_piece,id_piece,dice);
+            cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
             break;
         case 1:
-            thinkAleatorio(c_piece,id_piece,dice);
+            //thinkAleatorio(c_piece,id_piece,dice);
+            thinkMejorOpcion(c_piece,id_piece,dice);
             //valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion1);
             break;
         case 2:
@@ -196,82 +201,141 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
         color &c_piece, int &id_piece, int &dice -> si defino eso es mi ACCION
     */
 
-    // mis hijos son de la clase parchis de &actual
-    Parchis hijos[6]; // como mucho tengo 4 hijos, pero puedo tener mas por mas movimientos, lo del dado
-    int num_hijos ;
-    double mejor;
-    double valor = 0;
-
-    // accion anterior  last_c_piece, las_id_piece y last_dice 
-
-    color ultima_c_piece = none; // color ultima ficha movida
-    int ultima_id_piece = -1;// id de la ultima ficha que se movio
-    int ultima_dice = -1; // el dado que se uso en el ultimo movimiento
-
-    //int ganador = actual.getWinner(); // 1 si ha ganado 
-
-    // si es el nodo max getCurrentPlayerId de parchis
-    // Recordemos que un nodo debería ser MÁX cuando el jugador que mueve es el que llamó al algoritmo de búsqueda
-
-    if (profundidad == profundidad_max || actual.gameOver()) // fin juego o nodo terminal
-        return ValoracionTest(actual, jugador);
-    
-    // calculo el numero de hijos posibles dentro de mi arbol para hijos[6]
-    int n_act = -1;
-    Parchis aux = actual.generateNextMove(ultima_c_piece, ultima_id_piece, ultima_dice);
-    while (!(aux == actual) && n_act < PROFUNDIDAD_MINIMAX ){
+    // COmpruebo si es nodo final
+    if (profundidad  == profundidad_max || actual.gameOver()){
+        return ValoracionTest(actual,jugador);
+        cout << "FIN" << endl;
+    }
         
-        aux = actual.generateNextMove(ultima_c_piece, ultima_id_piece, ultima_dice);
-        n_act++;
-        cout << "HOLAAAAAAAAAAA" << n_act <<  endl;
+
+    // datos 
+    color last_c_piece = none; // color ultima ficha movida
+    int last_id_piece = -1;// id de la ultima ficha que se movio
+    int last_dice = -1; // el dado que se uso en el ultimo movimiento
+    double valor, aux;
+    
+    
+    if (actual.getCurrentPlayerId() == jugador)
+        valor = menosinf;
+    else 
+        valor = masinf;
+   
+    // genero hijo
+    Parchis hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
+
+    while (!(hijo == actual)){
+        
+        // genero aux
+        aux = MinMax(hijo,jugador,profundidad+2,profundidad_max,last_c_piece, last_id_piece, last_dice, ValoracionTest);
+       
+        cout << "Genero Hijo" << endl;
+        cout << profundidad << endl;
+        cout << profundidad_max <<endl;
+        cout << valor << endl;
+
+        if (actual.getCurrentPlayerId() == jugador){ // MAX
+
+            
+            //cout << "Hola" << endl;
+            if (aux > valor){
+                valor = aux;
+                if (profundidad == 0){
+                    c_piece = last_c_piece;
+                    id_piece = last_id_piece;
+                    dice = last_dice;
+                }
+                
+            }
+
+        } else { // MIN
+           //valor = masinf;
+           // cout << "Adios" << endl;
+
+            if (aux < valor){
+                valor = aux;
+
+                if (profundidad == 0){
+                    c_piece = last_c_piece;
+                    id_piece = last_id_piece;
+                    dice = last_dice;
+                }
+            }
+
+        }
+
+        // genero siguiente hijo
+        hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
+
     }
     
-    //cout << "HOLAAAAAAAAAAA" << n_act <<  endl;
-    n_act = num_hijos;
 
-
-        Parchis hijo = actual.generateNextMove(ultima_c_piece, ultima_id_piece, ultima_dice); // genero el hijo del actual
-
-        if (jugador == actual.getCurrentPlayerId()){ //MAX
-            // asignamos minimo
-            // generamos los descendientes del  estado actual y nos quedamos con la mejor accion
-            int num_hijos = 7;
-            mejor = menosinf; // inicializacion
-
-            for (int i = 0; i < num_hijos; i++){ // la condicion es la que no me convence
-                valor = MinMax(hijos[i], jugador, profundidad+1, profundidad_max, ultima_c_piece, ultima_id_piece, ultima_dice, ValoracionTest );
-
-                // si se cumple la condicion actualizo valor y mejor
-                if (valor > mejor){
-                    mejor = valor;
-
-                    c_piece = ultima_c_piece;
-                    id_piece = ultima_id_piece;
-                    dice = ultima_dice;
-                }
-            }
-        
-        } else { // MIN - los mismo pero para el menor valor
-            mejor = masinf;
-            //num_hijos = 7;
-            for (int i = 0; i < num_hijos; i++){
-                valor = MinMax(hijos[i], jugador, profundidad+1, profundidad_max, ultima_c_piece, ultima_id_piece, ultima_dice, ValoracionTest );
-
-                // si se cumple la condicion actualizo valor y mejor
-                if (valor < mejor){
-                    mejor = valor;
-
-                    c_piece = ultima_c_piece;
-                    id_piece = ultima_id_piece;
-                    dice = ultima_dice;
-                }
-            }
-        }
     
-    return mejor;
+
+    return valor; 
 }
 
  double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const{
+    
+    // COmpruebo si es nodo final
+    if (profundidad  == profundidad_max || actual.gameOver()){
+        return ValoracionTest(actual,jugador);
+        cout << "FIN" << endl;
+    }
+
+    // inicializo valores
+    color last_c_piece = none; // color ultima ficha movida
+    int last_id_piece = -1;// id de la ultima ficha que se movio
+    int last_dice = -1; // el dado que se uso en el ultimo movimiento
+
+    // genero hijo
+    Parchis hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
+
+    
+    while (!(hijo == actual)){
+        double valor = Poda_AlfaBeta(hijo,jugador, profundidad + 2,profundidad_max, last_c_piece, last_id_piece, last_dice,alpha, beta, ValoracionTest);
+       // double valor = 0;
+        if (actual.getCurrentPlayerId() == jugador){ // MAX
+            
+
+            if (valor > alpha){
+                // actualizo alpha
+                alpha = valor;
+                
+                // actualizo la accion
+                if (profundidad == 0){
+                    c_piece = last_c_piece;
+                    id_piece = last_id_piece;
+                    dice = last_dice;
+                }
+                
+
+            }
+
+            if (alpha >= beta ) // condicion de poda
+                return beta; 
+
+        } else { // MIN
+
+            if (valor < beta ){
+                beta = valor;
+
+                // actualizo la accion
+                if (profundidad == 0){
+                    c_piece = last_c_piece;
+                    id_piece = last_id_piece;
+                    dice = last_dice;
+                }
+            }
+
+           if (alpha >= beta ) // condicion de poda
+                return alpha;
+
+        }
+
+        hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
+    }
+    
+
 
  }
 
