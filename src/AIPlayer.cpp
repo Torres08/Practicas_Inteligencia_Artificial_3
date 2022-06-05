@@ -58,9 +58,9 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
     // Si quiero poder manejar varias heurísticas, puedo usar la variable id del agente para usar una u otra.
     switch(id){
         case 0:
-            //valor = MinMax(*actual, jugador, 0 ,PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, ValoracionTest );
+            valor = MinMax(*actual, jugador, 0 ,PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, ValoracionTest );
             //thinkAleatorio(c_piece,id_piece,dice);
-            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+            //valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
             //thinkMejorOpcion(c_piece,id_piece,dice);
             cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
             break;
@@ -227,7 +227,7 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
         
         // genero aux
         // aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,last_c_piece, last_id_piece, last_dice, ValoracionTest);
-        aux = MinMax(hijo,jugador,profundidad-1,profundidad_max,c_piece, id_piece, dice, ValoracionTest); 
+        aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,c_piece, id_piece, dice, ValoracionTest); 
 
         cout << "Genero Hijo" << endl;
         cout << profundidad << endl;
@@ -311,7 +311,7 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
             //cout << "Hola" << endl;
             if (aux > alpha){
                 alpha = aux;
-                
+
                 if (profundidad == 0){
                     c_piece = last_c_piece;
                     id_piece = last_id_piece;
