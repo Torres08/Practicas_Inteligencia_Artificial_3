@@ -73,7 +73,7 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
            // valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion2);
             break;
     }
-    cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
+    //cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
     
     
     //OPCION MINIMAX  accion -> c_piece dice id_puece, 
@@ -201,10 +201,10 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
         color &c_piece, int &id_piece, int &dice -> si defino eso es mi ACCION
     */
 
-    // COmpruebo si es nodo final
-    if (profundidad  == profundidad_max || actual.gameOver()){
+    // Compruebo si es nodo final
+    if (profundidad  == profundidad_max|| actual.gameOver()){
         return ValoracionTest(actual,jugador);
-        cout << "FIN" << endl;
+        
     }
         
 
@@ -226,8 +226,8 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
     while (!(hijo == actual)){
         
         // genero aux
-         aux = MinMax(hijo,jugador,profundidad+2,profundidad_max,last_c_piece, last_id_piece, last_dice, ValoracionTest);
-        //aux = MinMax(hijo,jugador,profundidad+2,profundidad_max,c_piece, id_piece, dice, ValoracionTest); funcionan ambos a primera instancia
+        // aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,last_c_piece, last_id_piece, last_dice, ValoracionTest);
+        aux = MinMax(hijo,jugador,profundidad-1,profundidad_max,c_piece, id_piece, dice, ValoracionTest); 
 
         cout << "Genero Hijo" << endl;
         cout << profundidad << endl;
@@ -278,8 +278,8 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
 
  double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const{
     
-    // COmpruebo si es nodo final
-    if (profundidad  == profundidad_max || actual.gameOver()){
+    
+    if (profundidad  == profundidad_max  || actual.gameOver()){
         return ValoracionTest(actual,jugador);
         
     }
@@ -289,35 +289,29 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
     color last_c_piece = none; // color ultima ficha movida
     int last_id_piece = -1;// id de la ultima ficha que se movio
     int last_dice = -1; // el dado que se uso en el ultimo movimiento
-    double aux; // valor pasa a ser alpha y beta
+    double aux; // valor lo sustituyo por alpha y beta, inicializados a +inf y a - inf
     
-    /*
-    if (actual.getCurrentPlayerId() == jugador)
-        valor = menosinf;
-    else 
-        valor = masinf;
-    */
-
     // genero hijo
     Parchis hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
 
     while (!(hijo == actual)){
         
         // genero aux
-        //aux = MinMax(hijo,jugador,profundidad+2,profundidad_max,last_c_piece, last_id_piece, last_dice, ValoracionTest);
-        aux = Poda_AlfaBeta(hijo, jugador, profundidad+2, profundidad_max,last_c_piece, last_id_piece, last_dice, alpha, beta, ValoracionTest );
+        //aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,c_piece, id_piece, dice, ValoracionTest); 
+        
+        aux = Poda_AlfaBeta(hijo, jugador, profundidad+1, profundidad_max, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
 
         cout << "Genero Hijo" << endl;
         cout << profundidad << endl;
         cout << profundidad_max <<endl;
         //cout << valor << endl;
-        
+
         if (actual.getCurrentPlayerId() == jugador){ // MAX
 
             //cout << "Hola" << endl;
-            if (aux > alpha ){
+            if (aux > alpha){
                 alpha = aux;
-
+                
                 if (profundidad == 0){
                     c_piece = last_c_piece;
                     id_piece = last_id_piece;
@@ -327,7 +321,8 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
             }
 
             if (alpha >= beta)
-                return beta;
+                break;
+               // return beta; // podo
 
         } else { // MIN
            //valor = masinf;
@@ -338,29 +333,34 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
 
                 
                 if (profundidad == 0){
-                   c_piece = last_c_piece;
-                   id_piece = last_id_piece;
+                    c_piece = last_c_piece;
+                    id_piece = last_id_piece;
                    dice = last_dice;
                 }
-                
+
+                if (alpha >= beta)
+                    break;
+                   // return alpha; // podo
+
             }
 
-             if (alpha >= beta)
-                return alpha;
-
         }
-        
+
         // genero siguiente hijo
-        // ¿POR QUE LO CASTEO MAL?
-        if (alpha < beta)
-         hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
-        
+        hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
+
     }
 
     if (actual.getCurrentPlayerId() == jugador)
-        return alpha;
+        return alpha; 
     else 
         return beta;
+    
+
+    
+
+    return alpha; 
+    
 
  }
 
