@@ -60,9 +60,10 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
         case 0:
             //valor = MinMax(*actual, jugador, 0 ,PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, ValoracionTest );
             
-            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+            //valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, alpha, beta, MiValoracion);
             
-            cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
+            //cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
             break;
         case 1:
             //thinkAleatorio(c_piece,id_piece,dice);
@@ -74,7 +75,7 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
            valor = MinMax(*actual, jugador, 0 ,PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, ValoracionTest );
             break;
     }
-    //cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
+    cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
     
     
     //OPCION MINIMAX  accion -> c_piece dice id_puece, 
@@ -97,7 +98,6 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
 double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
 {
     // Heurística de prueba proporcionada para validar el funcionamiento del algoritmo de búsqueda.
-
 
     int ganador = estado.getWinner();
     int oponente = (jugador + 1) % 2;
@@ -164,6 +164,159 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
     }
 }
 
+
+double AIPlayer::MiValoracion(const Parchis &estado, int jugador){
+
+    /*
+        COSAS A TENER EN CUENTA
+
+        Cosas del tutorial:
+        Aleatorio pero con cabeza
+            elegir aleatoriamente solo entre los dados para los que puede mover fichas
+            para cada dado veo el vector de fichas, si es mayor que 0 push back 
+            si el vector = 0 skip si no cojo un dado aleatorio de mi nuevo vector
+
+        Eligiendo que qiero mover 
+            los movimietnos siguen siendo aleatorio -> ahora vamso a intentar elegir que ficha queremos mover de forma inteligente 
+            lo que haremos sera mover siempre la ficha que tengamos mas adelantada, con el objetivo de llevarla cuanto antes a la 
+            meta . dado sigue siendo aleatorio
+            distanceBoxtoBox medir distancia entre dos casillas 
+            distance toGoal  para medir distancia a la meta 
+        
+        En parchis tenemos metodos de consulta casi cualquier cosa 
+        isEatingMOve() - ult movimiento se ha comido alguna ficha 
+        isGoalMove() - ult mov ha entrado a la meta 
+        gameOver - partido terminado 
+        getWInner - ganador partida 
+
+        recorremos las fichas respectivamente y las evaluamos
+
+        FUNCIONES IMPORTANTES
+
+        - Casilla y fichas Seguras
+            isSafeBox ( box)
+            isSafePIece (player, piece) devuelve si una determinada ficha de un determinado esta en una casilla segura o no
+
+        - Funciones para COmprobar barreras 
+            isWall
+            anyWall
+
+        - Acceso a las prolongaciones de Dice y Board 
+            Para acceder a una referencia constatne al tablero y a los dados para hacer consultas
+
+            getDice()
+            getBoard()
+            getAvaliablePieces(player, dice_number)
+            getAvaliableDices()
+
+        - Funciones de consulta
+
+            isLegalMove // tiene en cuenta las barreras
+            canSKipTurn // si puedo pasar turno con el dado seleccionado, no tiene fichas para mover
+            iseatingmove
+            isgoalmove
+            goalBounce
+            getcurrentColor()
+
+        const Parchis &estado, int jugador
+        
+    */
+
+   double valor;
+   // Compruebo si hay ganador o no
+   int oponente = (jugador + 1) % 2; 
+   int ganador = estado.getWinner();
+
+   // devuelvo + inf o menos inf dependiendo si he ganado o no 
+    if (ganador == jugador )
+        return gana;
+    else if (ganador == oponente)
+        return pierde;
+    else {
+        
+        // cogemos los colores de mi jugador y del oponente (Yo siempre juego siendo el 1 y el oponente el 0)
+        vector<color> mis_colors = estado.getPlayerColors(jugador); // azul y verde 1
+        vector<color> oponente_colors = estado.getPlayerColors(oponente); // amarillo y rojo 0 
+
+        // JUGADOR
+        int puntuacion_jugador = 0;
+       
+
+        // recorro las fichas de mi jugador, las azules y las verdes
+        // prioriza el bloquear, sacar fichas tmb
+
+        for (int i = 0; i < mis_colors.size(); ++i){
+            
+            // saco un color
+            color c = mis_colors[i]; // saco el verde por ejemplo
+            int id_ficha_mas_adelantada = -1;
+            int min_distancia_meta = 9999;
+
+            // algo de casilla get piece devuelve la casilla = box
+
+            // recorro todas las fichas de mi color (5 en total)
+            for (int j = 0; j < num_pieces; ++j){
+                
+                // DATOS [color c pieza j]
+                // aloro que este en la meta 
+                int distancia_meta = estado.distanceToGoal(c, j);
+                Box casilla = estado.getBoard().getPiece(c,j);
+                Dice dado = estado.getDice();
+
+                if (distancia_meta < min_distancia_meta){
+                    min_distancia_meta = distancia_meta;
+                    id_ficha_mas_adelantada = j;
+                }
+
+                //vector<int> current_pieces = estado.getAvailablePieces(c,dado.getAllDiceLayers());
+
+                // 1. valoro que este en la meta  [color verde, ficha 1]
+                if (casilla.type == goal){
+                    puntuacion_jugador += 20;   
+                
+
+                // valoro muy positivamente los muros += 10
+                // si el color del muro es el muestor -> muro
+                } else if(estado.isWall(casilla) == c){
+                    puntuacion_jugador += 15;  
+                
+                // valoro positivamente sacar ficha 
+                } else if(estado.isSafeBox(casilla)){
+                    puntuacion_jugador += 10; 
+
+                
+                // valoro comer y que no sea mio
+                } else if (estado.isEatingMove() && (c % 2 == 0)) {
+                    puntuacion_jugador += 5; 
+                
+                // valoro que se coma la ficha del enemigo, no la mia
+                } else if (estado.isSafePiece(c,j)){
+                    puntuacion_jugador += 1; 
+                }
+                // priorizar mover la ficha mas adelantada
+
+                // si con este movimiento me como ficha, o llego a la meta o con este movimiento gano la partida (necesito hijos creo)
+
+
+
+            }
+            
+
+        }
+
+        
+        // OPONENTE
+
+        return puntuacion_jugador;
+
+    }
+
+    
+
+   
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
@@ -228,12 +381,12 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
         
         // genero aux
         // aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,last_c_piece, last_id_piece, last_dice, ValoracionTest);
-        aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,c_piece, id_piece, dice, ValoracionTest); 
+        aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,c_piece, id_piece, dice, MiValoracion); 
 
-        cout << "Genero Hijo" << endl;
-        cout << profundidad << endl;
-        cout << profundidad_max <<endl;
-        cout << valor << endl;
+        //cout << "Genero Hijo" << endl;
+        //cout << profundidad << endl;
+        //cout << profundidad_max <<endl;
+        //cout << valor << endl;
 
         if (actual.getCurrentPlayerId() == jugador){ // MAX
 
@@ -300,11 +453,12 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
         // genero aux
         //aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,c_piece, id_piece, dice, ValoracionTest); 
         
-        aux = Poda_AlfaBeta(hijo, jugador, profundidad+1, profundidad_max, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+         aux = Poda_AlfaBeta(hijo, jugador, profundidad+1, profundidad_max, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+        //aux = Poda_AlfaBeta(hijo, jugador, profundidad+1, profundidad_max, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
 
-        cout << "Genero Hijo" << endl;
-        cout << profundidad << endl;
-        cout << profundidad_max <<endl;
+       // cout << "Genero Hijo" << endl;
+        //cout << profundidad << endl;
+       // cout << profundidad_max <<endl;
         //cout << valor << endl;
 
         if (actual.getCurrentPlayerId() == jugador){ // MAX
@@ -359,7 +513,7 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
 
     
 
-    return alpha; 
+     
     
 
  }
