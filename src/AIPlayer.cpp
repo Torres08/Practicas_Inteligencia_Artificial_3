@@ -61,8 +61,8 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
             //valor = MinMax(*actual, jugador, 0 ,PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, ValoracionTest );
             
             //valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
-            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, alpha, beta, MiValoracion);
-            
+            //valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_MINIMAX, c_piece, id_piece, dice, alpha, beta, MiValoracion);
+            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion);
             //cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
             break;
         case 1:
@@ -97,6 +97,7 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const{
 
 double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
 {
+
     // Heurística de prueba proporcionada para validar el funcionamiento del algoritmo de búsqueda.
 
     int ganador = estado.getWinner();
@@ -162,11 +163,13 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
         // Devuelvo la puntuación de mi jugador menos la puntuación del oponente.
         return puntuacion_jugador - puntuacion_oponente;
     }
+    
 }
 
 
 double AIPlayer::MiValoracion(const Parchis &estado, int jugador){
 
+    
     /*
         COSAS A TENER EN CUENTA
 
@@ -222,6 +225,7 @@ double AIPlayer::MiValoracion(const Parchis &estado, int jugador){
         
     */
 
+   
    double valor;
    // Compruebo si hay ganador o no
    int oponente = (jugador + 1) % 2; 
@@ -240,7 +244,7 @@ double AIPlayer::MiValoracion(const Parchis &estado, int jugador){
 
         // JUGADOR
         int puntuacion_jugador = 0;
-       
+        int min_distancia_meta = 9999;
 
         // recorro las fichas de mi jugador, las azules y las verdes
         // prioriza el bloquear, sacar fichas tmb
@@ -248,10 +252,15 @@ double AIPlayer::MiValoracion(const Parchis &estado, int jugador){
         for (int i = 0; i < mis_colors.size(); ++i){
             
             // saco un color
-            color c = mis_colors[i]; // saco el verde por ejemplo
+            color c = mis_colors[i]; // saco el verde por ejemplo amarillo verde rojo azul
             int id_ficha_mas_adelantada = -1;
-            int min_distancia_meta = 9999;
+            //vector<int> current_pieces = estado.getAvailablePieces(c, estado.getAvailableDices());
 
+             
+            
+        
+                    
+           
             // algo de casilla get piece devuelve la casilla = box
 
             // recorro todas las fichas de mi color (5 en total)
@@ -261,53 +270,101 @@ double AIPlayer::MiValoracion(const Parchis &estado, int jugador){
                 // aloro que este en la meta 
                 int distancia_meta = estado.distanceToGoal(c, j);
                 Box casilla = estado.getBoard().getPiece(c,j);
-                Dice dado = estado.getDice();
+        
+                color last_c_piece = none; // color ultima ficha movida
 
-                if (distancia_meta < min_distancia_meta){
-                    min_distancia_meta = distancia_meta;
-                    id_ficha_mas_adelantada = j;
-                }
-
-                //vector<int> current_pieces = estado.getAvailablePieces(c,dado.getAllDiceLayers());
-
+                
                 // 1. valoro que este en la meta  [color verde, ficha 1]
-                if (casilla.type == goal){
-                    puntuacion_jugador += 20;   
+                 
+                
+                // caso 1: Quiero llegar a la meta
+                if (estado.getBoard().getPiece(c, j).type == goal)
+                   puntuacion_jugador += 2000; 
+                
+                if (estado.getBoard().getPiece(c, j).type == home)
+                   puntuacion_jugador -= 50; 
+
+                if (estado.isEatingMove())
+                    puntuacion_jugador += 150;
+                
+                if(estado.isWall(casilla) == c)
+                 puntuacion_jugador += 200;
+                
+                if (estado.isSafePiece(c,j))
+                    puntuacion_jugador += 50;
+
+                
                 
 
-                // valoro muy positivamente los muros += 10
-                // si el color del muro es el muestor -> muro
-                } else if(estado.isWall(casilla) == c){
-                    puntuacion_jugador += 15;  
-                
-                // valoro positivamente sacar ficha 
-                } else if(estado.isSafeBox(casilla)){
-                    puntuacion_jugador += 10; 
-
-                
-                // valoro comer y que no sea mio
-                } else if (estado.isEatingMove() && (c % 2 == 0)) {
-                    puntuacion_jugador += 5; 
-                
-                // valoro que se coma la ficha del enemigo, no la mia
-                } else if (estado.isSafePiece(c,j)){
-                    puntuacion_jugador += 1; 
+                if(estado.distanceToGoal(c,j) < min_distancia_meta){
+                  min_distancia_meta = estado.distanceToGoal(c,j);
+                  
+                  id_ficha_mas_adelantada = j;
                 }
-                // priorizar mover la ficha mas adelantada
 
-                // si con este movimiento me como ficha, o llego a la meta o con este movimiento gano la partida (necesito hijos creo)
+                
 
+                
 
+                
+                
+ 
+                
+                
+               
+                
 
+                //if (estado.getBoard().getPiece(c, j).type == home)
+                //   puntuacion_jugador -= 10;
+
+               
+        
             }
-            
+
+            for (int j = 0; j < num_pieces; ++j){
+                if (id_ficha_mas_adelantada == j)
+                    puntuacion_jugador -= 0;
+            }
+
 
         }
 
         
         // OPONENTE
 
-        return puntuacion_jugador;
+        // Recorro todas las fichas del oponente
+        int puntuacion_oponente = 0;
+        // Recorro colores del oponente.
+        for (int i = 0; i < oponente_colors.size(); i++)
+        {
+            color c = oponente_colors[i];
+           
+            // Recorro las fichas de ese color.
+            for (int k = 0; k < num_pieces; k++)
+            {
+                Box casilla = estado.getBoard().getPiece(c,k);
+                if (casilla.type == goal)
+                   puntuacion_oponente += 2000; 
+                
+                if (casilla.type == home)
+                   //puntuacion_oponente += 50; 
+
+                if (estado.isEatingMove())
+                    //puntuacion_oponente += 150;
+                
+                 if(estado.isWall(casilla) == c)
+                     puntuacion_oponente += 100;
+                
+                else if (estado.isSafePiece(c,k))
+                    puntuacion_oponente += 250;
+               
+                 
+                
+            }
+        }
+        cout << "PUNTUACION: " <<  puntuacion_jugador - puntuacion_oponente << endl;
+
+        return puntuacion_jugador - puntuacion_oponente;
 
     }
 
@@ -383,7 +440,7 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
         // aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,last_c_piece, last_id_piece, last_dice, ValoracionTest);
         aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,c_piece, id_piece, dice, MiValoracion); 
 
-        //cout << "Genero Hijo" << endl;
+       // cout << "Genero Hijo" << endl;
         //cout << profundidad << endl;
         //cout << profundidad_max <<endl;
         //cout << valor << endl;
@@ -409,7 +466,7 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
                 valor = aux;
 
                 
-                if (profundidad == 0){
+               if (profundidad == 0){
                     c_piece = last_c_piece;
                     id_piece = last_id_piece;
                     dice = last_dice;
@@ -434,7 +491,10 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
     
     
     if (profundidad  == profundidad_max  || actual.gameOver()){
-        return ValoracionTest(actual,jugador);
+       //return ValoracionTest(actual,jugador);
+       //cout << "FIN" << endl;
+       return MiValoracion(actual,jugador);
+       
         
     }
         
@@ -446,19 +506,20 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
     double aux; // valor lo sustituyo por alpha y beta, inicializados a +inf y a - inf
     
     // genero hijo
-    Parchis hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
+    //Parchis hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
+    Parchis hijo = actual.generateNextMoveDescending(last_c_piece,last_id_piece, last_dice);
 
     while (!(hijo == actual)){
         
         // genero aux
         //aux = MinMax(hijo,jugador,profundidad+1,profundidad_max,c_piece, id_piece, dice, ValoracionTest); 
         
-         aux = Poda_AlfaBeta(hijo, jugador, profundidad+1, profundidad_max, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+        aux = Poda_AlfaBeta(hijo, jugador, profundidad+1, profundidad_max, c_piece, id_piece, dice, alpha, beta, MiValoracion);
         //aux = Poda_AlfaBeta(hijo, jugador, profundidad+1, profundidad_max, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
 
-       // cout << "Genero Hijo" << endl;
+        //cout << "Genero Hijo" << endl;
         //cout << profundidad << endl;
-       // cout << profundidad_max <<endl;
+        //cout << profundidad_max <<endl;
         //cout << valor << endl;
 
         if (actual.getCurrentPlayerId() == jugador){ // MAX
@@ -501,7 +562,8 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
         }
 
         // genero siguiente hijo
-        hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
+        //hijo = actual.generateNextMove(last_c_piece,last_id_piece, last_dice);
+        hijo = actual.generateNextMoveDescending(last_c_piece,last_id_piece, last_dice);
 
     }
 
@@ -509,11 +571,6 @@ double AIPlayer::MinMax (const Parchis &actual, int jugador, int profundidad, in
         return alpha; 
     else 
         return beta;
-    
-
-    
-
-     
     
 
  }
@@ -633,6 +690,7 @@ void AIPlayer::thinkFichaMasAdelantada (color & c_piece,  int & id_piece, int & 
                min_distancia_meta = distancia_meta;
                id_ficha_mas_adelantada = current_pieces[i];
            }
+
        }
 
        // caso en el que no haya encontrado nunguna ficha paso de turno.
