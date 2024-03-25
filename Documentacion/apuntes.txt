@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------------
 
-Torres Ramos, JUan Luis
+Torres Ramos, Juan Luis
 Practica Parchis MinMax, podaAlfaBeta
 
 ---------------------------------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ MEMORIA DE LA PRACTICA
 
 MINIMAX ALFABETA TEORIA
 
-- AHora dos o maas agentes intervienen simultaneamentte 
+- Ahora dos o maas agentes intervienen simultaneamentte 
 cierta diferencia de matrizz entre entornos multiagentes y sistemas multiagentes
     - 2 situaciones cooperaticas
     - competitivas teoria de juego
